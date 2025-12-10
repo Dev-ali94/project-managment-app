@@ -4,18 +4,27 @@ import Sidebar from '../components/Sidebar'
 import { Outlet } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { loadTheme } from '../features/themeSlice'
-import { Loader2Icon } from 'lucide-react'
+import { Loader2Icon, User } from 'lucide-react'
+import { useUser, SignIn } from '@clerk/clerk-react'
 
 const Layout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const { loading } = useSelector((state) => state.workspace)
     const dispatch = useDispatch()
+    const { user, isloaded } = useUser()
 
     // Initial load of theme
     useEffect(() => {
         dispatch(loadTheme())
     }, [])
+    if (!user) {
+        return (
+<div className='flex items-center justify-center h-screen bg-white dark:bg-zinc-950'>
+    <SignIn />
 
+</div>
+        )
+    }
     if (loading) return (
         <div className='flex items-center justify-center h-screen bg-white dark:bg-zinc-950'>
             <Loader2Icon className="size-7 text-blue-500 animate-spin" />
