@@ -2,8 +2,8 @@ import { createSlice } from "@reduxjs/toolkit";
 import { dummyWorkspaces } from "../assets/assets";
 
 const initialState = {
-    workspaces: dummyWorkspaces || [],
-    currentWorkspace: dummyWorkspaces[1],
+    workspaces: [],
+    currentWorkspace:null,
     loading: false,
 };
 
