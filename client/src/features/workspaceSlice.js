@@ -5,30 +5,30 @@ import api from "../config/api";
 
 export const fetchWorkspace = createAsyncThunk(
   "workspace/fetchWorkspace",
-  async ({ getToken }) => {
+  async ({ getToken }, { rejectWithValue }) => {
     try {
-      console.log("🔵 FetchWorkspace triggered!");
-      
       const token = await getToken();
-      console.log("🔑 Token:", token);
-
-      console.log("🌍 Hitting:", `${api.defaults.baseURL}/api/workspace`);
-
-      const { data } = await api.get("/api/workspace", {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await api.get("/api/workspace/", {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-
-      console.log("🟢 Backend Response:", data);
-
-      return data.workspaces || [];
+      const workspacesData = response.data?.workspaces || response.data || [];
+      return workspacesData;
 
     } catch (error) {
-      console.log("🔴 Error:", error?.response?.data?.message || error.message);
-      return [];
+      console.error({
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers
+      });
+      
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
-
 const initialState = {
     workspaces: [],
     currentWorkspace: null,

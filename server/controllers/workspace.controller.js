@@ -20,13 +20,18 @@ export const getUserWorkspaces = async (req, res) => {
             }
         });
 
-        // Use `workspaces` plural to match frontend
+        if (!workspaces || workspaces.length === 0) {
+            console.log(`⚠️ No workspaces found for user: ${userId}`); // <-- log in terminal
+            return res.status(404).json({ message: "No workspaces found for this user" });
+        }
+
         res.json({ workspaces });
     } catch (error) {
-        console.error(error);
+        console.error(`❌ Error fetching workspaces for user: ${error.message || error.code}`);
         res.status(500).json({ message: error.code || error.message });
     }
 };
+
 
 // Add a member to a workspace
 export const addMemberToWorkspace = async (req, res) => {
