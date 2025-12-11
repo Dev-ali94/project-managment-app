@@ -1,5 +1,5 @@
 import { Inngest } from "inngest";
-import prisma from "../../prisma/prisma.config.js"
+import prisma from "../prisma/prisma.config.js"
 
 export const inngest = new Inngest({ id: "project-managment-app" });
 

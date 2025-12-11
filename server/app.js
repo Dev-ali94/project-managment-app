@@ -1,7 +1,7 @@
 import { clerkMiddleware } from '@clerk/express'
 import express from 'express'
 import { serve } from "inngest/express";
-import {inngest,functions} from "../src/inngest/index.js"
+import {inngest,functions} from "./inngest/index.js"
 import cors from "cors"
 const app = express()
 
