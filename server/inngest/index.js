@@ -47,30 +47,48 @@ const syncUserDeletation = inngest.createFunction(
     }
 );
 
-// 2.4 Workspace creation
 const syncWorkSpaceCreation = inngest.createFunction(
-    { id: "sync-workspace-from-clerk" },
-    { event: "clerk/organization.created" },
-    async ({ event }) => {
-        const { data } = event;
-        await prisma.workspace.create({
-            data: {
-                id: data.id,
-                name: data.name,
-                slug: data.slug,
-                ownerId: data.created_by,
-                image_url: data.image_url
-            }
-        });
-        await prisma.workspaceMember.create({
-            data: {
-                userId: data.created_by,
-                workspaceId: data.id,
-                role: "ADMIN"
-            }
-        });
+  { id: "sync-workspace-from-clerk" },
+  { event: "clerk/organization.created" },
+  async ({ event }) => {
+    const data = event.data;
+
+    // Validate essential fields
+    if (!data.id || !data.created_by || !data.name) {
+      console.log("⚠ Missing required fields, skipping workspace creation", data);
+      return;
     }
+
+    // Use fallback defaults
+    const workspaceData = {
+      id: data.id,
+      name: data.name || "Untitled Workspace",
+      slug: data.slug || data.id,
+      ownerId: data.created_by,
+      image_url: data.image_url || ""
+    };
+
+    // Check if workspace already exists
+    const exists = await prisma.workspace.findUnique({ where: { id: workspaceData.id } });
+    if (exists) {
+      console.log("⚠ Workspace already exists, skipping:", workspaceData.id);
+      return;
+    }
+
+    await prisma.workspace.create({ data: workspaceData });
+
+    await prisma.workspaceMember.create({
+      data: {
+        userId: data.created_by,
+        workspaceId: data.id,
+        role: "ADMIN"
+      }
+    });
+
+    console.log("✅ Workspace created:", workspaceData);
+  }
 );
+
 
 // 2.5 Workspace update
 const syncWorkSpaceUpdation = inngest.createFunction(

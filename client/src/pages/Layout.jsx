@@ -19,30 +19,35 @@ const Layout = () => {
     useEffect(() => {
         dispatch(loadTheme())
     }, [])
+    useEffect(() => {
+  console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL)
+}, [])
 
-    useEffect(()=>{
-if (isloaded && user && workspaces.length === 0) {
-    dispatch(fetchWorkspace({getToken}))
-}
-    },[user,isloaded])
+
+    useEffect(() => {
+        if (isloaded && user && workspaces.length === 0) {
+            dispatch(fetchWorkspace({ getToken }))
+        }
+    }, [user, isloaded])
     if (!user) {
         return (
             <div className='flex items-center justify-center h-screen bg-white dark:bg-zinc-950'>
                 <SignIn />
             </div>
-        )}
+        )
+    }
     if (loading) return (
         <div className='flex items-center justify-center h-screen bg-white dark:bg-zinc-950'>
             <Loader2Icon className="size-7 text-blue-500 animate-spin" />
         </div>
     )
-   if (user && workspaces.length === 0) {
-    return(
-        <div className='min-h-screen flex items-center justify-center'>
-<CreateOrganization/>
-        </div>
-    )
-   }
+    if (user && workspaces.length === 0) {
+        return (
+            <div className='min-h-screen flex items-center justify-center'>
+                <CreateOrganization />
+            </div>
+        )
+    }
     return (
         <div className="flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-slate-100">
             <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />

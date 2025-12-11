@@ -3,16 +3,32 @@ import { dummyWorkspaces } from "../assets/assets";
 import api from "../config/api";
 
 
-export const fetchWorkspace = createAsyncThunk("workspace/fetchWorkspace", async ({ getToken }) => {
+export const fetchWorkspace = createAsyncThunk(
+  "workspace/fetchWorkspace",
+  async ({ getToken }) => {
     try {
-        const { data } = await api.get("/api/workspace", { headers: { Authorization: `Bearer${await getToken()}` } })
-        return data.workspaces || []
-    } catch (error) {
-        console.log(error?.response?.data?.message || error.message);
-        return []
+      console.log("🔵 FetchWorkspace triggered!");
+      
+      const token = await getToken();
+      console.log("🔑 Token:", token);
 
+      console.log("🌍 Hitting:", `${api.defaults.baseURL}/api/workspace`);
+
+      const { data } = await api.get("/api/workspace", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      console.log("🟢 Backend Response:", data);
+
+      return data.workspaces || [];
+
+    } catch (error) {
+      console.log("🔴 Error:", error?.response?.data?.message || error.message);
+      return [];
     }
-})
+  }
+);
+
 const initialState = {
     workspaces: [],
     currentWorkspace: null,
@@ -137,8 +153,8 @@ const workspaceSlice = createSlice({
             }
             state.loading = false
         })
-         builder.addCase(fetchWorkspace.rejected,(state)=>{
-            state.loading=false
+        builder.addCase(fetchWorkspace.rejected, (state) => {
+            state.loading = false
         })
     }
 
