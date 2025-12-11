@@ -3,7 +3,7 @@ import prisma from "../prisma/prisma.config.js"
 export const getUserWorkspaces = async (req, res) => {
     try {
         const { userId } = await req.auth()
-        const workspace = await prisma.workspace.findMany({
+        const workspaces = await prisma.workspace.findMany({
             where: {
                 members: { some: { userId: userId } }
             },
@@ -19,7 +19,7 @@ export const getUserWorkspaces = async (req, res) => {
 
             }
         })
-        res.json({ workspace })
+        res.json({ workspaces })
     } catch (error) {
         console.log(error);
         res.json({ message: error.code || error.message })
