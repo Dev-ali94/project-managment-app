@@ -122,6 +122,7 @@ const syncWorkSpaceMemberCreation = inngest.createFunction(
         });
     }
 );
+
 const sendTaskAssignmentEmail = inngest.createFunction(
   { id: "send-task-assignment-mail" },
   { event: "app/task.assigned" },
