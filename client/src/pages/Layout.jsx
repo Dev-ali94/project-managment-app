@@ -29,7 +29,7 @@ const Layout = () => {
           setInitialLoad(false);
         });
     }
-  }, [isLoaded, user, dispatch, getToken]);
+  }, [isLoaded, user]);
 
   // Show loading while checking authentication or initial load
   if (!isLoaded || initialLoad) {
@@ -61,9 +61,7 @@ const Layout = () => {
           <CreateOrganization 
             afterCreateOrganizationUrl="/"
             skipInvitationScreen={true}
-            afterCreateOrganization={(org) => {
-              console.log("Organization created:", org);
-              // Force fetch workspaces again
+            afterCreateOrganization={() => {
               dispatch(fetchWorkspace({ getToken }));
             }}
           />

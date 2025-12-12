@@ -1,9 +1,8 @@
 import prisma from "../prisma/prisma.config.js"
 
-// Get all workspaces for the logged-in user
 export const getUserWorkspaces = async (req, res) => {
     try {
-        const { userId } = await req.auth(); // correctly destructure
+        const { userId } = await req.auth();
         const workspaces = await prisma.workspace.findMany({
             where: {
                 members: { some: { userId } }
@@ -21,22 +20,19 @@ export const getUserWorkspaces = async (req, res) => {
         });
 
         if (!workspaces || workspaces.length === 0) {
-            console.log(`⚠️ No workspaces found for user: ${userId}`); // <-- log in terminal
             return res.status(404).json({ message: "No workspaces found for this user" });
         }
 
         res.json({ workspaces });
     } catch (error) {
-        console.error(`❌ Error fetching workspaces for user: ${error.message || error.code}`);
         res.status(500).json({ message: error.code || error.message });
     }
 };
 
-
 // Add a member to a workspace
 export const addMemberToWorkspace = async (req, res) => {
     try {
-        const { userId } = await req.auth(); // destructure userId
+        const { userId } = await req.auth();
         const { email, role, workspaceId, message } = req.body;
 
         // Validate inputs
@@ -52,9 +48,9 @@ export const addMemberToWorkspace = async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         // Check if workspace exists
-        const workspace = await prisma.workspace.findUnique({ 
-            where: { id: workspaceId }, 
-            include: { members: true } 
+        const workspace = await prisma.workspace.findUnique({
+            where: { id: workspaceId },
+            include: { members: true }
         });
         if (!workspace) return res.status(404).json({ message: "Workspace not found" });
 

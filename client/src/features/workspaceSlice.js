@@ -5,7 +5,7 @@ import api from "../config/api";
 
 export const fetchWorkspace = createAsyncThunk(
   "workspace/fetchWorkspace",
-  async ({ getToken }, { rejectWithValue }) => {
+  async ({ getToken }) => {
     try {
       const token = await getToken();
       const response = await api.get("/api/workspace/", {
@@ -21,11 +21,7 @@ export const fetchWorkspace = createAsyncThunk(
       console.error({
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status,
-        headers: error.response?.headers
       });
-      
-      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );

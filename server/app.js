@@ -5,6 +5,9 @@ import {inngest,functions} from "./inngest/index.js"
 import cors from "cors"
 import workspaceRouter from './routes/workspace.routes.js';
 import { protect } from './middleware/auth.middlewares.js';
+import projectRoutes from './routes/project.routes.js';
+import taskRoutes from './routes/task.routes.js';
+import commentRoutes from './routes/comment.routes.js';
 const app = express()
 
 app.use(express.json())
@@ -16,8 +19,9 @@ app.use(cors({
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/workspace",protect,workspaceRouter)
-
-
+app.use("/api/project",protect,projectRoutes)
+app.use("/api/task",protect,taskRoutes)
+app.use("/api/comment",protect,commentRoutes)
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
