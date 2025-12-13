@@ -77,9 +77,9 @@ export const createProject = async (req, res) => {
 export const updateProject = async (req, res) => {
     try {
         const { userId } = await req.auth();
-        const { id } = req.params;
-        const { workspaceId, description, name, status, start_date, end_date, team_lead, progress, priority } = req.body;
+        const { id, workspaceId, description, name, status, start_date, end_date, team_lead, progress, priority } = req.body;
 
+        // First check if the workspace exists
         const workspace = await prisma.workspace.findUnique({
             where: { id: workspaceId },
             include: { members: { include: { user: true } } }
@@ -89,6 +89,7 @@ export const updateProject = async (req, res) => {
             return res.status(404).json({ message: "Workspace not found" });
         }
 
+        // Check permissions
         const isAdmin = workspace.members.some((m) => m.userId === userId && m.role === "ADMIN");
 
         if (!isAdmin) {
@@ -100,24 +101,29 @@ export const updateProject = async (req, res) => {
                 return res.status(403).json({ message: "You do not have permission to update this project" });
             }
         }
-
-        const teamLead = await prisma.user.findUnique({
-            where: { email: team_lead },
-            select: { id: true }
-        });
-
+        let teamLeadId = null;
+        if (team_lead) {
+            const teamLeadUser = await prisma.user.findUnique({
+                where: { email: team_lead },
+                select: { id: true }
+            });
+            teamLeadId = teamLeadUser?.id || null;
+        }
         const updatedProject = await prisma.project.update({
             where: { id },
             data: {
-                workspaceId,
                 name,
                 description,
                 status,
                 priority,
                 progress,
-                team_lead: teamLead?.id || null,
                 start_date: start_date ? new Date(start_date) : null,
                 end_date: end_date ? new Date(end_date) : null,
+            },
+            include: {
+                members: { include: { user: true } },
+                workspace: true,
+                owner: true
             }
         });
 
@@ -128,7 +134,6 @@ export const updateProject = async (req, res) => {
         return res.status(500).json({ message: error.code || error.message });
     }
 };
-
 export const addMemberToProject = async (req, res) => {
     try {
         const { userId } = await req.auth();

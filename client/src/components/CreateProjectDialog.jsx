@@ -33,10 +33,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
             if (!formData.team_lead) {
                 return toast.error("Please select a team lead");
             }
-
             setIsSubmitting(true);
-            const token = await getToken();
-
             const { data } = await api.post(
                 "/api/project/",
                 {
@@ -45,20 +42,14 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                 },
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer ${await getToken()}`,
                         "Content-Type": "application/json",
                     },
                 }
             );
-
             dispatch(addProject(data.project));
-
-            // 🔥 RESET FORM AFTER SUCCESS
             setFormData(initialFormState);
-
-            // Close dialog
             setIsDialogOpen(false);
-
         } catch (error) {
             toast.error(error?.response?.data?.message || error.message);
         } finally {
@@ -97,7 +88,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    
+
                     {/* Name */}
                     <div>
                         <label className="block text-sm mb-1">Project Name</label>

@@ -15,30 +15,22 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!organization) {
       toast.error("Organization not loaded yet.");
       return;
     }
-
     if (!formData.email) {
       toast.error("Please enter an email address.");
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       await organization.inviteMember({
         emailAddress: formData.email,
         role: formData.role,
       });
-
       toast.success(`Invitation sent to ${formData.email}`);
-      
-      // Reset form after successful invite
       setFormData({ email: "", role: "org:member" });
-      
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Invite failed:", error);
