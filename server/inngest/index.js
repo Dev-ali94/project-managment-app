@@ -123,69 +123,89 @@ const syncWorkSpaceMemberCreation = inngest.createFunction(
     }
 );
 
-const sendTaskAssignmentEmail = inngest.createFunction(
-  { id: "send-task-assignment-mail" },
+export const sendTaskAssignmentEmail = inngest.createFunction(
+  {
+    id: "send-task-assignment-mail",
+  },
   { event: "app/task.assigned" },
   async ({ event, step }) => {
     const { taskId, origin } = event.data;
 
+    // Fetch task with assignee & project
     const task = await prisma.task.findUnique({
       where: { id: taskId },
-      include: { assignee: true, project: true }
+      include: { assignee: true, project: true },
     });
 
-    await sendMail({
-      to: task.assignee.email,
-      subject: `New Task Assigned in ${task.project.name}`,
-      body: `
-        <div style="font-family: Arial, Helvetica, sans-serif; padding: 20px; background: #f7f7f7;">
-          <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-            <h2 style="color: #333; margin-bottom: 10px;">New Task Assigned</h2>
-            <p style="font-size: 15px; color: #555;">Hi <strong>${task.assignee.name}</strong>,</p>
-            <p style="font-size: 15px; color: #555;">You have been assigned a new task in <strong>${task.project.name}</strong>.</p>
-            <div style="margin: 20px 0; padding: 15px; background: #f1f5f9; border-left: 4px solid #4f46e5; border-radius: 6px;">
-              <p style="margin: 0; font-size: 15px; color: #333;"><strong>Task:</strong> ${task.title}</p>
-              <p style="margin: 5px 0 0; font-size: 15px; color: #333;"><strong>Due Date:</strong> ${new Date(task.due_date).toLocaleDateString()}</p>
+    if (!task) {
+      console.error("Task not found for taskId:", taskId);
+      return;
+    }
+
+    // Send task assignment email
+    try {
+      await sendMail({
+        to: task.assignee.email,
+        subject: `New Task Assigned in ${task.project.name}`,
+        body: `
+          <div style="font-family: Arial, Helvetica, sans-serif; padding: 20px; background: #f7f7f7;">
+            <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+              <h2 style="color: #333; margin-bottom: 10px;">New Task Assigned</h2>
+              <p style="font-size: 15px; color: #555;">Hi <strong>${task.assignee.name}</strong>,</p>
+              <p style="font-size: 15px; color: #555;">You have been assigned a new task in <strong>${task.project.name}</strong>.</p>
+              <div style="margin: 20px 0; padding: 15px; background: #f1f5f9; border-left: 4px solid #4f46e5; border-radius: 6px;">
+                <p style="margin: 0; font-size: 15px; color: #333;"><strong>Task:</strong> ${task.title}</p>
+                <p style="margin: 5px 0 0; font-size: 15px; color: #333;"><strong>Due Date:</strong> ${new Date(task.due_date).toLocaleDateString()}</p>
+              </div>
+              <a href="${origin}" style="display: inline-block; background: #4f46e5; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;">View Task</a>
+              <p style="font-size: 13px; color: #888; margin-top: 25px;">If you have any questions, feel free to reach out to your project manager.</p>
             </div>
-            <a href="${origin}" style="display: inline-block; background: #4f46e5; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;">View Task</a>
-            <p style="font-size: 13px; color: #888; margin-top: 25px;">If you have any questions, feel free to reach out to your project manager.</p>
           </div>
-        </div>
-      `
-    });
+        `,
+      });
+    } catch (err) {
+      console.error("Error sending task assignment email:", err);
+    }
 
-    if (new Date(task.due_date).toLocaleDateString() !== new Date().toLocaleDateString()) {
+    // Only schedule reminder if due date is in the future
+    const now = new Date();
+    if (new Date(task.due_date) > now) {
       await step.sleepUntil("wait-for-the-due-date", new Date(task.due_date));
 
+      // Check task completion and send reminder if needed
       await step.run("check-if-task-is-completed", async () => {
         const updatedTask = await prisma.task.findUnique({
           where: { id: taskId },
-          include: { assignee: true, project: true }
+          include: { assignee: true, project: true },
         });
 
         if (!updatedTask) return;
 
         if (updatedTask.status !== "DONE") {
           await step.run("send-task-reminder-mail", async () => {
-            await sendMail({
-              to: updatedTask.assignee.email,
-              subject: `Reminder for ${updatedTask.project.name}`,
-              body: `
-                <div style="font-family: Arial, Helvetica, sans-serif; padding: 20px; background: #f7f7f7;">
-                  <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-                    <h2 style="color: #333; margin-bottom: 10px;">Task Reminder</h2>
-                    <p style="font-size: 15px; color: #555;">Hi <strong>${updatedTask.assignee.name}</strong>,</p>
-                    <p style="font-size: 15px; color: #555;">This is a reminder that your task in <strong>${updatedTask.project.name}</strong> is still not marked as completed.</p>
-                    <div style="margin: 20px 0; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
-                      <p style="margin: 0; font-size: 15px; color: #333;"><strong>Task:</strong> ${updatedTask.title}</p>
-                      <p style="margin: 5px 0 0; font-size: 15px; color: #333;"><strong>Due Date:</strong> ${new Date(updatedTask.due_date).toLocaleDateString()}</p>
+            try {
+              await sendMail({
+                to: updatedTask.assignee.email,
+                subject: `Reminder for ${updatedTask.project.name}`,
+                body: `
+                  <div style="font-family: Arial, Helvetica, sans-serif; padding: 20px; background: #f7f7f7;">
+                    <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                      <h2 style="color: #333; margin-bottom: 10px;">Task Reminder</h2>
+                      <p style="font-size: 15px; color: #555;">Hi <strong>${updatedTask.assignee.name}</strong>,</p>
+                      <p style="font-size: 15px; color: #555;">This is a reminder that your task in <strong>${updatedTask.project.name}</strong> is still not marked as completed.</p>
+                      <div style="margin: 20px 0; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
+                        <p style="margin: 0; font-size: 15px; color: #333;"><strong>Task:</strong> ${updatedTask.title}</p>
+                        <p style="margin: 5px 0 0; font-size: 15px; color: #333;"><strong>Due Date:</strong> ${new Date(updatedTask.due_date).toLocaleDateString()}</p>
+                      </div>
+                      <a href="${origin}" style="display: inline-block; background: #f59e0b; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;">View Task</a>
+                      <p style="font-size: 13px; color: #888; margin-top: 25px;">Please make sure to update the task status as soon as possible.</p>
                     </div>
-                    <a href="${origin}" style="display: inline-block; background: #f59e0b; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;">View Task</a>
-                    <p style="font-size: 13px; color: #888; margin-top: 25px;">Please make sure to update the task status as soon as possible.</p>
                   </div>
-                </div>
-              `
-            });
+                `,
+              });
+            } catch (err) {
+              console.error("Error sending task reminder email:", err);
+            }
           });
         }
       });
