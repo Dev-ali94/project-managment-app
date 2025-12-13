@@ -14,7 +14,6 @@ export const fetchWorkspace = createAsyncThunk(
         }
       });
       const workspacesData = response.data?.workspaces || response.data || [];
-      console.log(workspacesData);
       return workspacesData;
       
 
