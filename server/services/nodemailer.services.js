@@ -16,7 +16,7 @@ const sendMail = async ({to,subject,body}) => {
        from:process.env.SENDER_EMAIL,
        to,
        subject,
-       body,
+       html:body,
      });
      return response
 }

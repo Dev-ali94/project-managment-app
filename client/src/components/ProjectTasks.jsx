@@ -5,7 +5,9 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteTask, updateTask } from "../features/workspaceSlice";
 import { Bug, CalendarIcon, GitCommit, MessageSquare, Square, Trash, XIcon, Zap } from "lucide-react";
-
+import {useAuth} from "@clerk/clerk-react"
+import api from "../config/api";
+ 
 const typeIcons = {
     BUG: { icon: Bug, color: "text-red-600 dark:text-red-400" },
     FEATURE: { icon: Zap, color: "text-blue-600 dark:text-blue-400" },
@@ -21,6 +23,7 @@ const priorityTexts = {
 };
 
 const ProjectTasks = ({ tasks }) => {
+    const {getToken} = useAuth()
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [selectedTasks, setSelectedTasks] = useState([]);
@@ -58,9 +61,9 @@ const ProjectTasks = ({ tasks }) => {
         try {
             toast.loading("Updating status...");
 
-            //  Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
+            await  api.put(`/api/task/${taskId}`,{status:newStatus}, 
+                {headers: {Authorization: `Bearer ${await getToken()}`,"Content-Type": "application/json",}}
+            )
             let updatedTask = structuredClone(tasks.find((t) => t.id === taskId));
             updatedTask.status = newStatus;
             dispatch(updateTask(updatedTask));
@@ -75,16 +78,14 @@ const ProjectTasks = ({ tasks }) => {
 
     const handleDelete = async () => {
         try {
+
             const confirm = window.confirm("Are you sure you want to delete the selected tasks?");
             if (!confirm) return;
-
             toast.loading("Deleting tasks...");
-
-            //  Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
+            await  api.post("/api/task/delete",{taskIds:selectedTasks}, 
+                {headers: {Authorization: `Bearer ${await getToken()}`,"Content-Type": "application/json",}}
+            )
             dispatch(deleteTask(selectedTasks));
-
             toast.dismissAll();
             toast.success("Tasks deleted successfully");
         } catch (error) {

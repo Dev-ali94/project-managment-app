@@ -78,33 +78,44 @@ export const updateTask = async (req,res) => {
     
 }
 
-export const deleteTask = async (req,res) => {
-    try {
-        const {userId} = await req.auth() 
-        const {taskIds} = req.body
-        const tasks = await prisma.task.findUnique({
-            where:{id:{in:taskIds}}
-        })
-        if (tasks.length === 0) {
-            return res.status(404).json({message:"task not found"})
-        }
-        const project = await prisma.project.findUnique({
-            where:{id:tasks[0].projectId},
-            include:{members:{include:{user:true}}}
-        })
-        if (!project) {
-            return res.status(404).json({message:"Project not found"})
-        }else if(project.team_lead !== userId){
-            return res.status(403).json({message:"you dont have admin role"})
-        }
-       await prisma.task.deleteMany({
-        where:{id:{in:taskIds}}
-       })
-        res.status(201).json({message:'task deleted sucessfully'})
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({message:error.code || error.message})
-        
+export const deleteTask = async (req, res) => {
+  try {
+    const { userId } = await req.auth();
+    const { taskIds } = req.body;
+
+    if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+      return res.status(400).json({ message: "taskIds array is required" });
     }
-    
-}
+
+    // Fetch multiple tasks
+    const tasks = await prisma.task.findMany({
+      where: { id: { in: taskIds } }
+    });
+
+    if (tasks.length === 0) {
+      return res.status(404).json({ message: "tasks not found" });
+    }
+
+    // Check project
+    const project = await prisma.project.findUnique({
+      where: { id: tasks[0].projectId },
+      include: { members: { include: { user: true } } }
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    } else if (project.team_lead !== userId) {
+      return res.status(403).json({ message: "you don't have admin role" });
+    }
+
+    // Delete tasks
+    await prisma.task.deleteMany({
+      where: { id: { in: taskIds } }
+    });
+
+    res.status(200).json({ message: "tasks deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.code || error.message });
+  }
+};
