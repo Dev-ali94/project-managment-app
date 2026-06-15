@@ -13,9 +13,9 @@ const app = express()
 app.use(express.json())
 app.use(clerkMiddleware())
 app.use(cors({
-    origin:process.env.FRONTEND_URL,
-    Credential:true
-}))
+    origin: process.env.FRONTEND_URL || "https://customer-support-chat-bot-one.vercel.app",
+    credentials: true
+}));
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/workspace",protect,workspaceRouter)
