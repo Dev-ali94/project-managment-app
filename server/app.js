@@ -13,7 +13,10 @@ const app = express()
 app.use(express.json())
 app.use(clerkMiddleware())
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "https://customer-support-chat-bot-one.vercel.app",
+    origin:[
+     process.env.FRONTEND_URL,
+    "https://customer-support-chat-bot-one.vercel.app"
+    ], 
     credentials: true
 }));
 
